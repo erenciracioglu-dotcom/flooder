@@ -1,0 +1,19 @@
+# İşletim sistemi / editör
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Yerel araç ayarları ve ara veri (yeniden üretilebilir)
+.claude/
+*.npy
+*.log
+tiles/
+work/

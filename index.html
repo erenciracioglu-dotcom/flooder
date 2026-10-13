@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deniz Seviyesi Simülatörü · Türkiye</title>
+  <meta name="description" content="Deniz seviyesi −5.000 m ile +7.000 m arasında değişirse Türkiye ve çevresinde nerelerin su altında kalacağını ya da sudan çıkacağını gösteren etkileşimli harita.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1c30'/%3E%3Cpath d='M8 38c6-6 10-6 16 0s10 6 16 0 10-6 16 0v14H8z' fill='%2338d6ff'/%3E%3Cpath d='M14 30l10-16 8 11 5-6 13 11' fill='none' stroke='%23e8dcc0' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="vendor/maplibre-gl/maplibre-gl.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="map" aria-label="Harita"></div>
+
+  <aside id="panel" class="panel" aria-label="Kontrol paneli">
+    <header class="panel-head">
+      <div class="brand">
+        <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M6 40c6-6 11-6 17 0s11 6 17 0 11-6 18 0v10H6z" fill="currentColor"/><path d="M12 31l11-17 9 12 5-6 14 11" fill="none" stroke="#e8dcc0" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <div>
+          <h1>Deniz Seviyesi Simülatörü</h1>
+          <p>Türkiye ve çevresi · −5.000 m … +7.000 m</p>
+        </div>
+      </div>
+      <button id="panelToggle" class="icon-btn" type="button" title="Paneli gizle/göster" aria-label="Paneli gizle veya göster">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </header>
+
+    <div class="panel-body">
+      <section id="levelCard" class="level-card">
+        <div class="level-label">Deniz seviyesi (bugüne göre)</div>
+        <div class="level-readout"><span id="levelValue">0</span><span class="unit">m</span></div>
+        <div class="scenario"><b id="scenarioTitle">Günümüz</b><span id="scenarioText"></span></div>
+        <div class="level-input">
+          <button type="button" data-step="-100" title="−100 m">−100</button>
+          <button type="button" data-step="-10" title="−10 m">−10</button>
+          <button type="button" data-step="-1" title="−1 m">−1</button>
+          <label class="num"><input id="levelInput" type="number" inputmode="decimal" step="0.1" min="-5000" max="7000" value="0" aria-label="Deniz seviyesi (metre)"><span>m</span></label>
+          <button type="button" data-step="1" title="+1 m">+1</button>
+          <button type="button" data-step="10" title="+10 m">+10</button>
+          <button type="button" data-step="100" title="+100 m">+100</button>
+        </div>
+      </section>
+
+      <section id="stats" class="stats" aria-live="polite"></section>
+
+      <section class="settings">
+        <h2>Görünüm</h2>
+        <div class="seg-row">
+          <span>Altlık</span>
+          <div class="seg" data-seg="base" role="group" aria-label="Altlık harita">
+            <button type="button" data-value="sat">Uydu</button>
+            <button type="button" data-value="phys">Fiziki</button>
+          </div>
+        </div>
+        <div class="seg-row">
+          <span>Model</span>
+          <div class="seg" data-seg="model" role="group" aria-label="Su basma modeli">
+            <button type="button" data-value="conn" title="Deniz yalnızca bağlantılı olduğu yerlere girer; kapalı havzalar (Tuz Gölü, Konya, Van…) eşik aşılana kadar kuru kalır">Gerçekçi</button>
+            <button type="button" data-value="bath" title="Seviyenin altındaki her yer su altında sayılır (küvet modeli)">Basit</button>
+          </div>
+        </div>
+        <label class="switch"><input type="checkbox" data-toggle="highlight"><i></i><span>Su basan karaları vurgula</span></label>
+        <label class="switch"><input type="checkbox" data-toggle="coast"><i></i><span>Bugünkü kıyı çizgisi</span></label>
+        <label class="switch"><input type="checkbox" data-toggle="hillshade"><i></i><span>Rölyef gölgesi</span></label>
+        <label class="switch"><input type="checkbox" data-toggle="labels"><i></i><span>Yer adları ve sınırlar</span></label>
+        <label class="switch"><input type="checkbox" data-toggle="cities"><i></i><span>İl merkezleri</span></label>
+        <label class="switch"><input type="checkbox" data-toggle="three"><i></i><span>3B arazi (eğim için sağ tık + sürükle)</span></label>
+        <div id="exagRow" class="range-row" hidden>
+          <span>Yükseklik abartması</span>
+          <input id="exag" type="range" min="1" max="4" step="0.1" value="1.6" aria-label="Yükseklik abartması">
+          <b id="exagVal">1,6×</b>
+        </div>
+      </section>
+
+      <section class="cities">
+        <div class="cities-head">
+          <h2>İl merkezleri</h2>
+          <input id="citySearch" type="search" placeholder="İl ara…" aria-label="İl ara" autocomplete="off">
+        </div>
+        <p class="hint">Rakıma göre sıralı. Tıklayınca haritada gider.</p>
+        <ol id="cityList" class="city-list"></ol>
+      </section>
+
+      <footer class="panel-foot">
+        <button id="aboutBtn" type="button" class="link-btn">Yöntem, veri kaynakları ve sınırlamalar</button>
+      </footer>
+    </div>
+  </aside>
+
+  <div id="gauge" class="gauge" aria-label="Deniz seviyesi göstergesi"></div>
+  <div id="readout" class="readout" hidden></div>
+
+  <dialog id="about" class="about">
+    <div class="about-inner">
+      <h2>Bu harita nasıl çalışıyor?</h2>
+      <p>Her piksel için yükseklik (karada) veya derinlik (denizde) bilinir. Seçtiğiniz deniz seviyesinin altında kalan yerler su, üstündekiler kara olarak çizilir; suyun rengi derinliğe göre değişir. Hesaplar tarayıcıda, ekran kartında anlık yapılır; yakınlaştırdıkça ~25–30 m çözünürlüğe kadar inilir.</p>
+      <h3>İki model</h3>
+      <ul>
+        <li><b>Gerçekçi:</b> Deniz yalnızca denize bağlı alanlara girer. Denize doğal çıkışı olmayan kapalı havzalar (Van Gölü, Tuz Gölü, Konya Ovası, Akşehir–Eber, Burdur, Acıgöl, Seyfe, Sultan Sazlığı, Ölü Deniz, Hazar Çöküntüsü vb.) havzanın en alçak eşiği aşılana kadar kuru kalır. Eşikler ~230 m çözünürlükte, deniz yüzeyinden başlayan bir “taşma” (priority-flood) analiziyle bulundu.</li>
+        <li><b>Basit (küvet):</b> Seviyenin altındaki her yer su altında sayılır.</li>
+      </ul>
+      <h3>Veri kaynakları</h3>
+      <ul>
+        <li>Yükseklik/derinlik: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles</a> (AWS Open Data; Mapzen/Tilezen). Kara: SRTM, EU-DEM (Copernicus), GMTED2010; deniz: ETOPO1 (NOAA).</li>
+        <li>Uydu görüntüsü: Esri World Imagery (Esri, Maxar, Earthstar Geographics).</li>
+        <li>Yer adları, sınırlar, kıyı çizgisi: <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · © OpenMapTiles · © OpenStreetMap katkıcıları.</li>
+        <li>İl sınırları (istatistik için): geoBoundaries (OpenStreetMap kaynaklı). İl nüfusları: TÜİK ADNKS 2025.</li>
+        <li>Harita motoru: MapLibre GL JS.</li>
+      </ul>
+      <h3>Sınırlamalar</h3>
+      <ul>
+        <li>Kara verisinin dikey hatası birkaç metredir; binalar ve bitki örtüsü yüksekliğe karışmış olabilir. Birkaç metrelik yükselmeler için sonuçlar yaklaşıktır.</li>
+        <li>Deniz tabanı verisi ~1,8 km çözünürlüklüdür; kıyıya yakın sığ alanlar ve boğazlar kaba görünür.</li>
+        <li>Model tüm denizlerde aynı seviyeyi varsayar; gelgit, dalga, erozyon, tortu, buz yükünün kalkması (izostazi) ve barajların dayanımı hesaba katılmaz.</li>
+        <li>+70 m’nin üstü ve −130 m’nin altı fiziksel olarak gerçekçi değildir (Dünyada bunlara yetecek buz yok); topoğrafyayı keşfetmek için sunulur.</li>
+        <li>İstatistikler (alan, il yüzdeleri) ~230 m çözünürlükte, il sınırlarıyla kesiştirilerek önceden hesaplanmıştır; göller kara alanına dahildir.</li>
+      </ul>
+      <h3>Kaynak kod</h3>
+      <p><a href="https://github.com/erenciracioglu-dotcom/flooder" target="_blank" rel="noopener">github.com/erenciracioglu-dotcom/flooder</a> · MIT lisansı. Veri hazırlama betikleri ve yöntem ayrıntıları depodaki README dosyasında.</p>
+      <h3>Kısayollar</h3>
+      <p>Göstergeyi sürükleyin veya üzerinde fare tekerleğini çevirin · Gösterge seçiliyken ↑/↓, PageUp/PageDown, Home (0 m) · Harita odaktayken <kbd>+</kbd>/<kbd>−</kbd> · Sağ tık + sürükle: döndür/eğ.</p>
+      <button id="aboutClose" type="button" class="primary">Kapat</button>
+    </div>
+  </dialog>
+
+  <div id="loading" class="loading"><div class="spinner"></div><div>Harita yükleniyor…</div></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
