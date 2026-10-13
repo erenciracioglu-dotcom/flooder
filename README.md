@@ -6,6 +6,12 @@ Deniz seviyesi **−5.000 m ile +7.000 m** arasında değişirse Türkiye ve çe
 
 *English: an interactive sea-level map of Türkiye and its surroundings (−5,000 m … +7,000 m), rendered on the GPU with MapLibre GL JS, with bathymetry, a hydrologically “connected” flooding model and per-province statistics. The UI is in Turkish.*
 
+| +70 m — tüm buzullar eriseydi (İstanbul) | +990 m — Ankara su altında, Tuz Gölü havzası kuru |
+|---|---|
+| ![+70 m İstanbul](docs/screenshots/istanbul-70m.jpg) | ![+990 m İç Anadolu](docs/screenshots/tuz-golu-990m.jpg) |
+| **−2.000 m — Karadeniz yalnızca orta çukurunda** | **+200 m — 3B görünüm (Sakarya, Düzce)** |
+| ![−2.000 m Karadeniz](docs/screenshots/karadeniz-eksi-2000m.jpg) | ![+200 m 3B](docs/screenshots/sakarya-200m-3b.jpg) |
+
 ## Başlatma
 
 - **Tarayıcıdan:** yukarıdaki canlı demo bağlantısı (kurulum gerekmez).
